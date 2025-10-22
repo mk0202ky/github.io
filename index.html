@@ -3,56 +3,98 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>横向き：中央スクロール＋黄色パネル（下で隠す／下端で復帰）</title>
+<title>横向き：黄色スワイプ開閉（最終版）</title>
 <style>
-html,body{
-  margin:0;height:100%;background:#2b2b2b;
-  display:flex;justify-content:center;align-items:center;
-  font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
-}
-.frame{
-  width:1112px;height:834px;background:#111;border-radius:24px;
-  position:relative;overflow:hidden;box-shadow:0 0 20px rgba(0,0,0,.5);
-}
-.fixed{position:absolute;left:0;width:100%;height:100px;background:#666;opacity:.5;pointer-events:none;}
-.fixed.top{top:0}.fixed.bottom{bottom:0}
-
-/* 中央スクロール帯（赤） */
-.scroll-band{
-  position:absolute;left:50%;transform:translateX(-50%);
-  top:100px;bottom:100px;width:420px;background:#7b1c1c;border-radius:12px;
-  overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;
-}
-.item{font-size:18px;color:#fff;padding:14px 6px;border-bottom:1px solid rgba(255,255,255,.3)}
-
-/* 黄色パネル（表示時のみ操作可） */
-.panel{
-  position:absolute;left:50%;transform:translateX(-50%);
-  bottom:100px;width:420px;height:90px;background:#ffd400;border-radius:20px 20px 0 0;
-  display:flex;align-items:center;justify-content:center;color:#222;font-weight:700;
-  box-shadow:0 -6px 12px rgba(0,0,0,.25);transition:transform .25s ease;
-  touch-action:none;z-index:10; /* 可視時は操作可 */
-}
-.panel.hidden{
-  transform:translate(-50%, 140%);   /* しっかり画面外へ */
-  pointer-events:none;               /* 隠れたら触れない */
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #2b2b2b;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
 }
 
-/* 下端の“エッジ復帰帯”（非表示時だけ有効） */
-.edge-reveal{
-  position:absolute;left:0;bottom:0;width:100%;height:30px;
-  background:transparent;z-index:9;touch-action:none;
-  pointer-events:none;                 /* 既定は無効 */
+/* iPadフレーム */
+.frame {
+  width: 1112px;
+  height: 834px;
+  background: #111;
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
-.edge-reveal.active{ pointer-events:auto; } /* 非表示時のみ有効化 */
 
-.label{position:absolute;right:12px;top:12px;color:#bbb;font-size:12px}
+/* 中央スクロール帯 */
+.scroll-band {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 100px;
+  bottom: 100px;
+  width: 420px;
+  background: #7b1c1c;
+  border-radius: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+}
+.item {
+  font-size: 18px;
+  color: #fff;
+  padding: 14px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+}
+
+/* 黄色パネル */
+.panel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 100px;
+  width: 420px;
+  height: 90px;
+  background: #ffd400;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #222;
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: 0 -6px 12px rgba(0,0,0,0.25);
+  transition: transform 0.3s ease;
+  z-index: 10;
+  touch-action: none;
+}
+.panel.hidden {
+  transform: translate(-50%, 200%);
+  pointer-events: none;
+}
+
+/* 下端スワイプゾーン */
+.edge {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 40px;
+  background: transparent;
+  z-index: 5;
+  touch-action: none;
+}
+.label {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  color: #bbb;
+  font-size: 12px;
+}
 </style>
 </head>
 <body>
 <div class="frame">
-  <div class="fixed top"></div>
-
   <div class="scroll-band">
     <div class="item">① Drive Mode Sensitivity</div>
     <div class="item">② Steering Feedback</div>
@@ -64,92 +106,54 @@ html,body{
     <div class="item">⑧ Tire Grip Balance</div>
     <div class="item">⑨ Traction Mode</div>
     <div class="item">⑩ Chassis Balance</div>
-    <div class="item">⑪ Accel Tip-in</div>
-    <div class="item">⑫ Brake Blend</div>
-    <div class="item">⑬ Damping Map</div>
-    <div class="item">⑭ Yaw Control</div>
-    <div class="item">⑮ Road Noise Mask</div>
   </div>
 
-  <div class="panel" id="panel">⬇︎ 下スワイプで隠す / 下端で上スワイプ復帰</div>
-  <div class="edge-reveal" id="edge"></div>
+  <div class="panel" id="panel">⬇︎ 下スワイプで非表示 / 下端上スワイプで復帰</div>
+  <div class="edge" id="edge"></div>
 
-  <div class="fixed bottom"></div>
-  <div class="label">エッジスワイプ復帰対応</div>
+  <div class="label">横向き・スワイプ検証モック</div>
 </div>
 
 <script>
-const panel = document.getElementById('panel');
-const edge  = document.getElementById('edge');
+const panel = document.getElementById("panel");
+const edge = document.getElementById("edge");
 
 let startY = null;
 let isHidden = false;
 
-/* ---- 共通ヘルパ ---- */
-function hidePanel(){
-  if (isHidden) return;
-  panel.classList.add('hidden');
-  isHidden = true;
-  edge.classList.add('active');      // 下端エッジ帯を有効化
-}
-function showPanel(){
-  if (!isHidden) return;
-  panel.classList.remove('hidden');
-  isHidden = false;
-  edge.classList.remove('active');   // エッジ帯を無効化
-}
+/* 黄色パネル：下スワイプで非表示 */
+panel.addEventListener("touchstart", e => {
+  startY = e.touches[0].clientY;
+}, { passive: true });
 
-/* ---- 黄色パネル上：下スワイプで非表示 ---- */
-function onTouchStart(e){ startY = (e.touches? e.touches[0].clientY : e.clientY); }
-function onTouchMove(e){
-  if (startY==null) return;
-  // パネル上の意図しないスクロールを抑止
-  if (e.cancelable) e.preventDefault();
-}
-function onTouchEnd(e){
-  if (startY==null) return;
-  const endY = (e.changedTouches? e.changedTouches[0].clientY : e.clientY);
-  const dy   = endY - startY;
-  const TH   = 28;                   // 閾値
-  if (dy > TH) hidePanel();          // ↓で隠す
+panel.addEventListener("touchend", e => {
+  if (startY === null) return;
+  const endY = e.changedTouches[0].clientY;
+  const delta = endY - startY;
+  if (delta > 40 && !isHidden) {
+    panel.classList.add("hidden");
+    isHidden = true;
+  }
   startY = null;
-}
-panel.addEventListener('touchstart', onTouchStart, {passive:true});
-panel.addEventListener('touchmove',  onTouchMove,  {passive:false});
-panel.addEventListener('touchend',   onTouchEnd,   {passive:true});
-panel.addEventListener('mousedown',  onTouchStart);
-panel.addEventListener('mousemove',  onTouchMove);
-panel.addEventListener('mouseup',    onTouchEnd);
+}, { passive: true });
 
-/* ---- 下端エッジ帯：上スワイプで再表示（非表示時のみactive） ---- */
+/* 下端スワイプゾーン：上スワイプで再表示 */
 let edgeStartY = null;
-edge.addEventListener('touchstart', e=>{
+edge.addEventListener("touchstart", e => {
   if (!isHidden) return;
   edgeStartY = e.touches[0].clientY;
-},{passive:true});
-edge.addEventListener('touchmove', e=>{
-  if (!isHidden || edgeStartY==null) return;
-  if (e.cancelable) e.preventDefault();     // OSスクロール抑止
-},{passive:false});
-edge.addEventListener('touchend', e=>{
-  if (!isHidden || edgeStartY==null) return;
-  const dy = e.changedTouches[0].clientY - edgeStartY;
-  if (dy < -24) showPanel();                // ↑で復帰
-  edgeStartY = null;
-},{passive:true});
+}, { passive: true });
 
-/* マウスでも試せるように（Mac検証用） */
-edge.addEventListener('mousedown', e=>{ if(isHidden) edgeStartY=e.clientY; });
-edge.addEventListener('mousemove', e=>{
-  if (!isHidden || edgeStartY==null) return;
-  e.preventDefault();
-});
-edge.addEventListener('mouseup', e=>{
-  if (!isHidden || edgeStartY==null) return;
-  const dy = e.clientY - edgeStartY;
-  if (dy < -10) showPanel();
+edge.addEventListener("touchend", e => {
+  if (!isHidden || edgeStartY === null) return;
+  const endY = e.changedTouches[0].clientY;
+  const delta = endY - edgeStartY;
+  if (delta < -40) {
+    panel.classList.remove("hidden");
+    isHidden = false;
+  }
   edgeStartY = null;
-});
+}, { passive: true });
 </script>
 </body>
 </html>
